@@ -18,25 +18,26 @@ const parseEither = <L, R>(
   parseLeft: P.Parse<L>,
   parseRight: P.Parse<R>
 ): P.Parse<Either<L, R>> =>
-  P.Parse.string()
-    .at("kind", [])
-    .bind(x =>
+  P.Parse.string().pipe(
+    P.Parse.at("kind", []),
+    P.Parse.bind(x =>
       x === "left"
         ? parseLeft.at("left", []).map(x => left<L, R>(x))
         : x === "right"
         ? parseRight.at("right", []).map(x => right<L, R>(x))
         : P.Parse.fail<Either<L, R>>("Invalid type").at("kind", [])
-    );
+    )
+  );
 
 describe("greet", () => {
   it("parses things", () => {
     const parser = P.Parse.zip4(
-      P.Parse.string().maybeAt("some", ["nested", "path"]),
+      P.Parse.string().pipe(P.Parse.maybeAt("some", ["nested", "path"])),
       P.Parse.dateTimeOffsetFlex({
         epochIsMilliseconds: true,
-      }).at("some", ["other", "path"]),
-      P.Parse.bool().at("the", ["flag"]),
-      P.Parse.floatFlex().at("the", ["number"])
+      }).pipe(P.Parse.at("some", ["other", "path"])),
+      P.Parse.bool().pipe(P.Parse.at("the", ["flag"])),
+      P.Parse.floatFlex().pipe(P.Parse.at("the", ["number"]))
     ).map(([a, b, c, d]) => ({ a, b, c, d }));
 
     var objInput = {
@@ -54,18 +55,20 @@ describe("greet", () => {
       },
     };
 
-    var result = parser.parse(
-      P.Navigator.unknown(),
-      P.Maybe.fromNullable(objInput)
+    var result = parser.pipe(
+      P.Parse.parse(P.Navigator.unknown(), P.Maybe.fromNullable(objInput))
     );
     console.log(result);
 
     const singleParser = parseEither(
-      P.Parse.string().filter(s => (s.length < 5 ? ["Too short!"] : [])),
-      P.Parse.intFlex()
-        .filter(x => (x < 21 ? ["Too low!"] : []))
-        .maybe()
-        .map(P.Maybe.toNullable)
+      P.Parse.string().pipe(
+        P.Parse.filter(s => (s.length < 5 ? ["Too short!"] : []))
+      ),
+      P.Parse.intFlex().pipe(
+        P.Parse.filter(x => (x < 21 ? ["Too low!"] : [])),
+        P.Parse.maybe(),
+        P.Parse.map(P.Maybe.toNullable)
+      )
     );
     const seqParser = singleParser.seq();
     const seqInput = [
@@ -90,9 +93,8 @@ describe("greet", () => {
         right: 42,
       },
     ];
-    const result2 = seqParser.parse(
-      P.Navigator.unknown(),
-      P.Maybe.fromNullable(seqInput)
+    const result2 = seqParser.pipe(
+      P.Parse.parse(P.Navigator.unknown(), P.Maybe.fromNullable(seqInput))
     );
     console.log(result2);
   });

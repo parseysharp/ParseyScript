@@ -1,6 +1,6 @@
 {
   "name": "@parseysharp/parseyscript",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "TypeScript parsing library for turning less-structured data into typed values with path-aware errors.",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",

@@ -2,6 +2,7 @@ import * as PR from "./parseResult";
 import * as M from "./maybe";
 import * as N from "./navigate";
 import * as Z from "./listZipper";
+import * as Pipeable from "./pipeable";
 
 export * from "./maybe";
 export * from "./navigate";
@@ -30,15 +31,28 @@ const notNull = (
     onJust: x => PR.ParseResult.success<PR.ParseError[]>()(x),
   });
 
-export abstract class Parse<A> {
+export abstract class Parse<A> extends Pipeable.Class() {
   abstract run: <B>(
     nav: N.Navigator<B>
   ) => (x: M.Maybe<B>) => PR.ParseResult<A, PR.ParseError[]>;
 
   abstract name: () => string;
+
   bind = <B>(f: (value: A) => Parse<B>): Parse<B> =>
     new BindParse<A, B>(this, f);
+
+  static bind =
+    <A, B>(f: (value: A) => Parse<B>) =>
+    (parse: Parse<A>): Parse<B> =>
+      parse.bind(f);
+
   map = <B>(f: (value: A) => B): Parse<B> => new MapParse<A, B>(this, f);
+
+  static map =
+    <A, B>(f: (value: A) => B) =>
+    (parse: Parse<A>): Parse<B> =>
+      parse.map(f);
+
   tuple = <B>(
     other: Parse<B>,
     combineErrors?: (
@@ -47,6 +61,18 @@ export abstract class Parse<A> {
     ) => PR.ParseError[]
   ): Parse<[A, B]> =>
     new ApplyParse<A, B, [A, B]>(this, other, (a, b) => [a, b] as const);
+
+  static tuple =
+    <A, B>(
+      other: Parse<B>,
+      combineErrors?: (
+        e1: PR.ParseError[],
+        e2: PR.ParseError[]
+      ) => PR.ParseError[]
+    ) =>
+    (parse: Parse<A>): Parse<[A, B]> =>
+      parse.tuple(other, combineErrors);
+
   filter = (f: (value: A) => string[]): Parse<A> =>
     new FilterParse<A, A>(this, x => {
       const errs = f(x);
@@ -56,17 +82,47 @@ export abstract class Parse<A> {
             errs.map(e => new PR.ParseError(e, this.name(), x, []))
           );
     });
+
+  static filter =
+    <A>(f: (value: A) => string[]) =>
+    (parse: Parse<A>): Parse<A> =>
+      parse.filter(f);
+
   transform = <B>(
     name: string,
     f: (value: A) => PR.ParseResult<B, PR.ParseError[]>
   ): Parse<B> => new FilterParse<A, B>(this.withName(name), f);
+
+  static transform =
+    <A, B>(name: string, f: (value: A) => PR.ParseResult<B, PR.ParseError[]>) =>
+    (parse: Parse<A>) =>
+      parse.transform(name, f);
+
   maybe = (): Parse<M.Maybe<A>> => new MaybeParse<A>(this);
+
+  static maybe =
+    <A>() =>
+    (parse: Parse<A>): Parse<M.Maybe<A>> =>
+      parse.maybe();
+
   orElse = (other: Parse<A>): Parse<A> => new OrElseParse<A>(this, other);
+
+  static orElse =
+    <A>(other: Parse<A>) =>
+    (parse: Parse<A>): Parse<A> =>
+      parse.orElse(other);
+
   at = (head: string | number, tail: (string | number)[]): Parse<A> =>
     new PathParse<A>(
       Z.ListZipper.fromCons(N.Path.lift(head), tail.map(N.Path.lift)),
       this
     );
+
+  static at =
+    <A>(head: string | number, tail: (string | number)[]) =>
+    (parse: Parse<A>): Parse<A> =>
+      parse.at(head, tail);
+
   maybeAt = (
     head: string | number,
     tail: (string | number)[]
@@ -83,8 +139,25 @@ export abstract class Parse<A> {
       )
       .maybe()
       .map(x => x.bind(_ => _));
+
+  static maybeAt =
+    <A>(head: string | number, tail: (string | number)[]) =>
+    (parse: Parse<A>): Parse<M.Maybe<A>> =>
+      parse.maybeAt(head, tail);
+
   seq = (): Parse<A[]> => new SeqParse<A>(this);
+
+  static seq =
+    <A>() =>
+    (parse: Parse<A>): Parse<A[]> =>
+      parse.seq();
+
   withName = (name: string): Parse<A> => new RenamedParse<A>(this, name);
+
+  static withName =
+    <A>(name: string) =>
+    (parse: Parse<A>): Parse<A> =>
+      parse.withName(name);
 
   static as = <A>(name: string, check: (x: unknown) => x is A): Parse<A> =>
     new ValueParse<A>(name, x => notNull(name, x).map(x => x as A)).filter(x =>
@@ -258,7 +331,7 @@ export abstract class Parse<A> {
       )
       .map(([a, [b, c, d, e, f, g]]) => [a, b, c, d, e, f, g] as const);
 
-  static seq = (name: string): Parse<unknown[]> =>
+  static mkSeq = (name: string): Parse<unknown[]> =>
     new ValueParse<unknown[]>(name, x =>
       notNull(name, x).bind(x =>
         Array.isArray(x)
@@ -274,6 +347,11 @@ export abstract class Parse<A> {
     x: M.Maybe<B>
   ): PR.ParseResult<A, PR.FmtParseError[]> =>
     this.run(nav)(x).mapFailure(e => e.map(e => e.format()));
+
+  static parse =
+    <B>(nav: N.Navigator<B>, x: M.Maybe<B>) =>
+    <A>(parser: Parse<A>): PR.ParseResult<A, PR.FmtParseError[]> =>
+      parser.parse(nav, x);
 }
 
 class RenamedParse<A> extends Parse<A> {
@@ -454,7 +532,7 @@ class SeqParse<A> extends Parse<A[]> {
   run =
     <B>(nav: N.Navigator<B>) =>
     (x: M.Maybe<B>): PR.ParseResult<A[], PR.ParseError[]> =>
-      Parse.seq(this.name())
+      Parse.mkSeq(this.name())
         .run<B>(nav)(x)
         .bind(xs =>
           PR.ParseResult.traverse(
