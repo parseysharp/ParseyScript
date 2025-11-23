@@ -38,6 +38,9 @@ export abstract class Parse<A> extends Pipeable.Class() {
 
   abstract name: () => string;
 
+  static pure = <A>(x: A, name: string = "pure"): Parse<A> =>
+    new PureParse<A>(name, x);
+
   bind = <B>(f: (value: A) => Parse<B>): Parse<B> =>
     new BindParse<A, B>(this, f);
 
