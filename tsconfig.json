@@ -1,5 +1,9 @@
 {
   "compilerOptions": {
+    // File layout
+    "rootDir": "./src",
+    "outDir": "./dist",
+
     // Environment Settings
     "module": "commonjs", // or "esnext" if you want modern syntax but not NodeNext rules
     "target": "esnext",
@@ -26,5 +30,6 @@
     "strict": true,
     "jsx": "react-jsx",
     "skipLibCheck": true
-  }
+  },
+  "include": ["src"]
 }

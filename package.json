@@ -1,9 +1,11 @@
 {
-  "name": "parseyscript",
+  "name": "@parseysharp/parseyscript",
   "version": "1.0.0",
   "description": "TypeScript parsing library for turning less-structured data into typed values with path-aware errors.",
-  "main": "index.js",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
   "scripts": {
+    "build": "tsc",
     "test": "vitest"
   },
   "keywords": [
@@ -14,7 +16,20 @@
     "error-reporting"
   ],
   "author": "",
-  "license": "ISC",
+  "license": "Apache-2.0",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/parseysharp/ParseyScript.git"
+  },
+  "bugs": {
+    "url": "https://github.com/parseysharp/ParseyScript/issues"
+  },
+  "homepage": "https://github.com/parseysharp/ParseyScript#readme",
+  "files": [
+    "dist",
+    "README.md",
+    "LICENSE"
+  ],
   "devDependencies": {
     "typescript": "^5.9.3",
     "vitest": "^4.0.13"
