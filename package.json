@@ -1,0 +1,22 @@
+{
+  "name": "parseyscript",
+  "version": "1.0.0",
+  "description": "TypeScript parsing library for turning less-structured data into typed values with path-aware errors.",
+  "main": "index.js",
+  "scripts": {
+    "test": "vitest"
+  },
+  "keywords": [
+    "typescript",
+    "parser",
+    "parsing",
+    "types",
+    "error-reporting"
+  ],
+  "author": "",
+  "license": "ISC",
+  "devDependencies": {
+    "typescript": "^5.9.3",
+    "vitest": "^4.0.13"
+  }
+}

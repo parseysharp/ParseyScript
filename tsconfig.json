@@ -1,0 +1,30 @@
+{
+  "compilerOptions": {
+    // Environment Settings
+    "module": "commonjs", // or "esnext" if you want modern syntax but not NodeNext rules
+    "target": "esnext",
+    "moduleResolution": "node", // add this
+    "useDefineForClassFields": false,
+
+    // You can keep or remove these as you like; they won't force extensions in CJS mode:
+    // "verbatimModuleSyntax": false,
+    // "isolatedModules": true,
+    // "moduleDetection": "force",
+
+    "types": [],
+
+    // Other Outputs
+    "sourceMap": true,
+    "declaration": true,
+    "declarationMap": true,
+
+    // Stricter Typechecking
+    "noUncheckedIndexedAccess": true,
+    "exactOptionalPropertyTypes": true,
+
+    // Recommended
+    "strict": true,
+    "jsx": "react-jsx",
+    "skipLibCheck": true
+  }
+}
